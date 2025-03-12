@@ -1,0 +1,59 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Définition des catégories et enveloppes
+categories = {
+    "Besoins (50%)": ["Loyer/Hypothèque", "Factures (électricité, eau, internet...)", "Alimentation", "Transport", "Assurances", "Santé"],
+    "Envies (30%)": ["Loisirs", "Restaurants", "Shopping", "Abonnements (Netflix, Spotify...)"],
+    "Épargne et Dettes (20%)": ["Épargne de précaution", "Investissements", "Remboursement dettes"]
+}
+
+# Revenu mensuel (modifiable)
+revenu_mensuel = 3000
+
+# Calcul des montants alloués à chaque enveloppe
+allocated = []
+for cat, envelopes in categories.items():
+    # Extraction du pourcentage depuis le libellé de la catégorie
+    percent = float(cat.split("(")[1].strip(" %)"))
+    total_category = revenu_mensuel * percent / 100
+    for env in envelopes:
+        # Répartition égale du montant entre les enveloppes de la catégorie
+        envelope_amount = total_category / len(envelopes)
+        allocated.append({"Catégorie": cat, "Enveloppe": env, "Montant (€)": round(envelope_amount, 2)})
+
+df = pd.DataFrame(allocated)
+
+# Création du diagramme en camembert pour la répartition globale 50-30-20
+categories_percent = {"Besoins": 50, "Envies": 30, "Épargne et Dettes": 20}
+plt.figure(figsize=(6,6))
+plt.pie(list(categories_percent.values()), labels=list(categories_percent.keys()), autopct='%1.1f%%', startangle=90)
+plt.title("Répartition des Revenus (50-30-20)")
+plt.savefig("repartition_50_30_20.png")
+plt.close()
+
+# Création du diagramme en barres pour la répartition par enveloppe
+plt.figure(figsize=(10,6))
+plt.bar(df["Enveloppe"], df["Montant (€)"], color='skyblue')
+plt.xticks(rotation=45, ha="right")
+plt.title("Montant alloué par enveloppe")
+plt.ylabel("Montant (€)")
+plt.tight_layout()
+plt.savefig("enveloppe_distribution.png")
+plt.close()
+
+# Export du tableau et des diagrammes dans un fichier Excel
+excel_file = "Budget_Base_Zero.xlsx"
+writer = pd.ExcelWriter(excel_file, engine="xlsxwriter")
+df.to_excel(writer, index=False, sheet_name="Budget")
+
+# Récupération de l'objet workbook et de la feuille pour insérer les images
+workbook  = writer.book
+worksheet = writer.sheets["Budget"]
+
+# Insertion des images des diagrammes dans la feuille Excel
+worksheet.insert_image("F2", "repartition_50_30_20.png", {'x_scale': 0.7, 'y_scale': 0.7})
+worksheet.insert_image("F20", "enveloppe_distribution.png", {'x_scale': 0.7, 'y_scale': 0.7})
+
+writer.save()
+print("Le fichier Excel a été créé :", excel_file)
